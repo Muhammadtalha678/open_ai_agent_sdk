@@ -1,9 +1,10 @@
-from agents import Agent,Runner,RunConfig,AsyncOpenAI,OpenAIChatCompletionsModel,function_tool,SQLiteSession
+from agents import Agent,Runner,RunConfig,AsyncOpenAI,OpenAIChatCompletionsModel,function_tool,SQLiteSession,ModelSettings
 from dotenv import load_dotenv
 import os
 import asyncio
 from dataclasses import dataclass
 load_dotenv()
+from pydantic import BaseModel
 
 Gemini_Api_Key = os.getenv('GEMINI_API_KEY')
 Base_Url = os.getenv('GOOGLE_GEMINI_BASE_URL')
@@ -14,16 +15,21 @@ client = AsyncOpenAI(
 )
 
 model = OpenAIChatCompletionsModel(
-    model='gemini-2.5-pro',
+    model='gemini-1.5-flash',
     openai_client=client
 )
 runConfig = RunConfig(
     model=model,
     model_provider=client,
     tracing_disabled=True,
-
+    # model_settings=ModelSettings(
+    #     temperature=0.7,
+    # )
 )
-
+class UserEvent(BaseModel):
+    uid:str
+    plan:str
+    # description:str
 @dataclass
 class UserContext:
     uid:str
@@ -57,23 +63,33 @@ async def show_user_plan(context:UserContext) -> str:
     return await context.get_plan()
 
 
-agent = Agent[UserContext](name="Assistant",instructions="you are UserInfo fetch Assistant",tools=[show_user_plan])
+agent = Agent[UserContext](
+    name="Assistant",
+    instructions="you are UserInfo fetch Assistant",
+    tools=[show_user_plan],
+    output_type=UserEvent
+    )
 
 async def main():
     session = SQLiteSession(session_id="converstaion_123")
-    while True:
-        query = input("Enter the query:")
-        if query.lower() == "quit":
-            print("Exiting...")
-            break 
-        result = await Runner.run(
-            agent,
-            input= query,
-            context=UserContext(uid="2"),
-            run_config=runConfig,
-            session=session
-        )
-        print(result.final_output)
+    try:
+        while True:
+            query = input("Enter the query:")
+            if query.lower() == "quit":
+                print("Exiting...")
+                break 
+            result = await Runner.run(
+                agent,
+                input= query,
+                context=UserContext(uid="2"),
+                run_config=runConfig,
+                session=session,
+
+            )
+            print(result.final_output)
+    except Exception as e:
+        print("error",e)
+    
 if __name__ == '__main__':
     asyncio.run(main())     
 
