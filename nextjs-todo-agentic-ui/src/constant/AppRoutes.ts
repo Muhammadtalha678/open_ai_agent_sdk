@@ -1,4 +1,4 @@
-const dev_url = "http://localhost:8000"
+const dev_url = "http://127.0.0.1:8000"
 const prod_url = process.env.NEXT_PUBLIC_PROD_URL
 const base_url = process.env.NODE_ENV === "production" ? prod_url : dev_url
 
