@@ -81,8 +81,7 @@ async def handle_todo_operation(db,agent_config,query):
     runConfig = RunConfig(
         model=agent_config.model(),
         model_provider= agent_config.client(),
-        tracing_disabled=True,
-        
+        # tracing_disabled=True,
     )
 
     all_todos_agent = Agent[DbContext](
