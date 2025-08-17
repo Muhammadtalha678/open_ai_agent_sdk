@@ -1,7 +1,11 @@
 from agents import Agent,Runner,RunConfig,FunctionTool,function_tool,enable_verbose_stdout_logging,ModelSettings,RunContextWrapper,handoff
 from dataclasses import dataclass
 from pymongo.database import Database
-from pydantic import BaseModel,ConfigDict
+# import src.models.Todo_Model as TodoModel
+from src.models.Todo_Model import TodoModel
+
+# TodoModel.TodoModel
+
 # class GetTodoListParams(BaseModel):
 #     model_config:ConfigDict(extra="forbid")
     
@@ -19,6 +23,7 @@ def fetch_todos_from_db(db:Database):
     db_table = db['todos']
     todos = list(db_table.find({}))
     todos = [{**todo,'_id':str(todo['_id'])} for todo in todos] 
+    # print(todos)
     return {"message":"Todos fetch successfully",'todos':todos}
 
 
@@ -48,28 +53,26 @@ all_todo_tool = FunctionTool(
     on_invoke_tool=run_function,
 )
 @function_tool()
-def add_todo_tool(context:RunContextWrapper[DbContext],title="",description=""):
+def add_todo_tool(context:RunContextWrapper[DbContext],todos:list[TodoModel]):
     """
     Goal:
-        Create a todo in MongoDb database.
+        Create multiple todos in MongoDb database.
 
-    Args:
-        title:The title of the tool.
-        description:The description of the tool.
-        
+     Args:
+        todos: List of TodoModel with title, description, and optional status.         
     Returns:
-        The newly created todo item
+        The newly created todo items
     """
 
     db_table = context.context.get_table_todos()
-
-    new_todo = {
-        "title":title,
-        "description":description
-    } # use todo.model_dump() if you use pydantic v2
-    db_table.insert_one(new_todo)
+    inserted = []
+    for todo in todos:
+        new_todo = todo.model_dump() # use todo.model_dump() if you use pydantic v2
+        print(new_todo)
+        db_table.insert_one(new_todo)
+        inserted.append(new_todo)
     # print(todo)
-    return new_todo
+    return inserted
 
 
 
@@ -93,16 +96,21 @@ async def handle_todo_operation(db,agent_config,query):
     )
     add_todo_agent = Agent[DbContext](
         name="Add Todo",
-        instructions="Add the todo by using the given tool",
+         instructions=(
+        "Add one or more todos using the given tool. "
+        "If the user gives multiple todos in a single query, "
+        "combine them into a list and call the tool only once."
+        ),
         tools=[add_todo_tool],
-        model_settings=ModelSettings(tool_choice="required")
+        # model_settings=ModelSettings(tool_choice="required")
     )
     starting_agent = Agent(
         name="Todo Agent",
         instructions=(
-            "Help the user with their questions."
-            # "If they ask about to see all todos, handoff to the all_todos agent."
-            # "If they give some discription and told to add todo, handoff to the add todo agent agent."
+           "Help the user with their todo requests. "
+        "If they ask to see all todos, handoff to the 'Fetch All Todos' agent. "
+        "If they ask to add todos, handoff once to the 'Add Todo' agent. "
+        "Do not make more than one handoff per query."
         ),
         handoffs=[all_todos_agent,add_todo_agent],
         # tools=[all_todo_tool]

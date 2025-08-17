@@ -10,6 +10,12 @@ class TodoModel(BaseModel):
         if not value.strip():
             raise ValueError("title must not be empty")
         return value
+    
+    @field_validator('description')
+    def validate_description(cls,value):
+        if not value.strip():
+            raise ValueError("description must not be empty")
+        return value
 
 
         
