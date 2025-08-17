@@ -79,7 +79,7 @@ def add_todo_tool(context:RunContextWrapper[DbContext],todos:list[TodoModel]):
 async def handle_todo_operation(db,agent_config,query):
     mongoDbContext = DbContext(db=db)
     # print(agent_config)
-    enable_verbose_stdout_logging()
+    # enable_verbose_stdout_logging()
     # # return {query}
     runConfig = RunConfig(
         model=agent_config.model(),
