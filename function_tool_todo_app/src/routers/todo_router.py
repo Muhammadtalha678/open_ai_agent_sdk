@@ -1,26 +1,27 @@
 from fastapi import APIRouter,Request
 from src.models.Todo_Model import TodoModel
+from src.models.QueryModel import QueryModel
 from typing import List
-
+from src.controllers.todo_controller import handle_todo_operation,fetch_todos_from_db
 router = APIRouter()
 
 
 
 @router.get("/todos")
 def get_all_todos(request:Request):
-    db = request.app.state.database
-    todos = list(db['todos'].find({}))
-    todos = [{**todo,'_id':str(todo['_id'])} for todo in todos]
-# todo['_id'] = str(todo['_id'])
-    # print(todos) 
-    return {"message":"Todos fetch successfully",'todos':todos}
+   db = request.app.state.database
+   return fetch_todos_from_db(db)
 
-@router.post("/addTodo")
-def add_todo(request:Request,todo:TodoModel):
+# @router.post("/addTodo")
+# def add_todo(request:Request,todo:TodoModel):
+#     db = request.app.state.database
+#     return add_todo_tool(db,todo)
+
+
+@router.post("/query")
+async def todo_query(request_query:QueryModel,request:Request):
     db = request.app.state.database
-    todo_dict = todo.model_dump() # use todo.model_dump() if you use pydantic v2
-    todos = db['todos'].insert_one(todo_dict)
-    print(todo)
-    return todo
+    agent_config = request.app.state.agent_config
+    return await handle_todo_operation(agent_config=agent_config,db=db,query=request_query.query)
 
 
