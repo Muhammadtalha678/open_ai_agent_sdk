@@ -23,7 +23,7 @@ def fetch_todos_from_db(db:Database):
     db_table = db['todos']
     todos = list(db_table.find({}))
     todos = [{**todo,'_id':str(todo['_id'])} for todo in todos] 
-    # print(todos)
+     print(todos)
     return {"message":"Todos fetch successfully",'todos':todos}
 
 
