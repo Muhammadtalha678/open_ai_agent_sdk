@@ -1,0 +1,12 @@
+.venv
+.env
+.mypy_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+.chainlit
+.files
